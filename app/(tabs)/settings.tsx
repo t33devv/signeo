@@ -1,32 +1,22 @@
-import React from 'react'
-import { Text, View } from 'react-native'
-
-import { useVideoPlayer, VideoSource, VideoView } from 'expo-video';
-
-const assetId = require('../../assets/asl-vids/simple/bonjour.mp4');
-
-const videoSource: VideoSource = {
-  assetId,
-  metadata: {
-    title: 'Bonjour/Hello'
-  }
-}
-
-
+import { VideoView } from 'expo-video';
+import React from 'react';
+import { Text, View } from 'react-native';
+import { useFlashcardVideo } from '../hooks/useVideoPlayer';
 
 const settings = () => {
-  const player1 = useVideoPlayer(videoSource, player => {
-  player.loop = true;
-  player.play();
-});
-
-player1.volume = 0.0;
-player1.loop = true;
+  // Use your existing hook with the bonjour video
+  const { player: videoPlayer, hasVideo } = useFlashcardVideo('bonjour', 'Bonjour/Hello');
 
   return (
-    <View>
-      <Text>settings</Text>
-      <VideoView player={player1} style={{ width: 300, height: 300 }} nativeControls={false}/>
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text style={{ fontSize: 24, marginBottom: 20 }}>Bonjour Video</Text>
+      {hasVideo && (
+        <VideoView 
+          player={videoPlayer} 
+          style={{ width: 300, height: 300 }} 
+          nativeControls={false}
+        />
+      )}
     </View>
   )
 }
