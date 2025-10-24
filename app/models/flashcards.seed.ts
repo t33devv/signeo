@@ -2,7 +2,7 @@ import { Flashcard } from './flashcards.types';
 
 export const seedCards: Flashcard[] = [
   // Simple cards with videos
-  { id: '1', setId: 'simple', front: '', back: 'Hello | Bonjour', videoPath: 'bonjour', videoTitle: 'Hello' },
+  { id: '1', setId: 'simple', front: 'bonjour', back: 'Hello | Bonjour', videoPath: 'bonjour', videoTitle: 'Hello' },
   { id: '2', setId: 'simple', front: '', back: 'Goodbye | Au revoir', videoPath: 'bye', videoTitle: 'Goodbye' },
   { id: '3', setId: 'simple', front: '', back: 'Big | Grand', videoPath: 'big', videoTitle: 'Big' },
   { id: '4', setId: 'simple', front: '', back: 'Small | Petit', videoPath: 'small', videoTitle: 'Small' },

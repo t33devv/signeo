@@ -6,16 +6,22 @@ import { ensureSeed, getSet, initDb } from '../data/flashcards.repo.sqlite';
 import { getLastIndex, initProgress, setLastIndex } from '../data/progress.repo.sqlite';
 import { Flashcard, FlashSetId } from '../models/flashcards.types';
 
-// Disable swipe back
-export const options = { gestureEnabled: false };
+import { VideoView } from 'expo-video';
+import { useFlashcardVideo } from '../hooks/useVideoPlayer';
 
-export default function FlashSet() {
+const FlashSet = () => {
+  
+
   const { id } = useLocalSearchParams();
   const setId = (id as FlashSetId);
 
   // state
   const [cards, setCards] = useState<Flashcard[] | null>(null);
   const [idx, setIdx] = useState(0);
+
+  const card = cards?.[idx];
+
+  const { player: videoPlayer, hasVideo } = useFlashcardVideo(card?.videoPath, card?.videoTitle);
 
   // flip animation
   const flip = useRef(new Animated.Value(0)).current;
@@ -25,80 +31,10 @@ export default function FlashSet() {
 
   // scroll animation
   const scrollAnim = useRef(new Animated.Value(0)).current;
-  const [isAnimating, setIsAnimating] = useState(false);
 
   const flipCard = () =>
     Animated.timing(flip, { toValue: isBack ? 0 : 1, duration: 300, easing: Easing.out(Easing.cubic), useNativeDriver: true })
       .start(() => setIsBack(!isBack));
-
-  const goHomeNoAnim = () => router.replace('/');
-
-  // Animation for next card
-  const animateToNext = () => {
-    if (isAnimating) return;
-    
-    setIsAnimating(true);
-    
-    // Slide current card out to the left
-    Animated.timing(scrollAnim, {
-      toValue: -1,
-      duration: 200,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start(() => {
-      // Change to next card and reset position
-      if (idx < cards!.length - 1) {
-        setIdx(idx + 1);
-        flip.setValue(0);
-        setIsBack(false);
-      } else {
-        goHomeNoAnim();
-        return;
-      }
-      
-      // Reset scroll position and slide new card in from the right
-      scrollAnim.setValue(1);
-      Animated.timing(scrollAnim, {
-        toValue: 0,
-        duration: 200,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }).start(() => {
-        setIsAnimating(false);
-      });
-    });
-  };
-
-  // Animation for previous card
-  const animateToPrevious = () => {
-    if (isAnimating || idx === 0) return;
-    
-    setIsAnimating(true);
-    
-    // Slide current card out to the right
-    Animated.timing(scrollAnim, {
-      toValue: 1,
-      duration: 200,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start(() => {
-      // Change to previous card and reset position
-      setIdx(idx - 1);
-      flip.setValue(0);
-      setIsBack(false);
-      
-      // Reset scroll position and slide new card in from the left
-      scrollAnim.setValue(-1);
-      Animated.timing(scrollAnim, {
-        toValue: 0,
-        duration: 200,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }).start(() => {
-        setIsAnimating(false);
-      });
-    });
-  };
 
   // ONE init/load effect: init DBs, seed, load cards, restore last index
   useEffect(() => {
@@ -132,22 +68,16 @@ export default function FlashSet() {
     return (
       <SafeAreaView style={styles.center}>
         <Text>No cards found for "{setId}".</Text>
-        <TouchableOpacity onPress={goHomeNoAnim}><Text>Go Home</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => router.replace('/')}><Text>Go Home</Text></TouchableOpacity>
       </SafeAreaView>
     );
   }
-
-  const card = cards[idx];
-  const translateX = scrollAnim.interpolate({
-    inputRange: [-1, 0, 1],
-    outputRange: [-400, 0, 400],
-  });
 
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
       <View style={styles.container}>
         <View style={styles.headerRow}>
-          <TouchableOpacity onPress={goHomeNoAnim} style={styles.backButton}>
+          <TouchableOpacity onPress={() => router.replace('/')} style={styles.backButton}>
             <Text style={styles.backButtonText}>‹ Back</Text>
           </TouchableOpacity>
           <Text style={styles.title}>{setId.toUpperCase()} ({idx + 1}/{cards.length})</Text>
@@ -156,32 +86,35 @@ export default function FlashSet() {
 
         <View style={styles.cardWrapper}>
           <TouchableOpacity activeOpacity={0.9} onPress={flipCard}>
-            <Animated.View style={[styles.flipContainer, { transform: [{ translateX }] }]}>
               <View style={styles.flipContainer}>
                 <Animated.View style={[styles.face, styles.front, { transform: [{ perspective: 1000 }, { rotateY: rotateFront }] }]}>
-                  <Text style={styles.cardText}>{card.front}</Text>
+                  {hasVideo && (
+                          <VideoView 
+                            player={videoPlayer} 
+                            style={{ width: 500, height: 450}} 
+                            nativeControls={false}
+                          />
+                        )}
                 </Animated.View>
                 <Animated.View style={[styles.face, styles.back,  { transform: [{ perspective: 1000 }, { rotateY: rotateBack }]  }]}>
-                  <Text style={styles.cardText}>{card.back}</Text>
+                  <Text style={styles.cardText}>{card?.back}</Text>
                 </Animated.View>
-              </View>
-            </Animated.View>
+            </View>
           </TouchableOpacity>
         </View>
 
         <View style={styles.controls}>
           <TouchableOpacity
             style={[styles.button, idx === 0 && styles.buttonDisabled]}
-            disabled={idx === 0 || isAnimating}
-            onPress={animateToPrevious}
+            // FIX THE FLIPPING GLITCH
+            onPress={() => { if (idx > 0) setIdx(idx - 1); if (isBack) setIsBack(false); }}
           >
             <Text style={styles.buttonText}>Previous</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.button}
-            disabled={isAnimating}
-            onPress={animateToNext}
+            onPress={() => { if (idx < cards.length - 1) setIdx(idx + 1); if (isBack) setIsBack(false); }}
           >
             <Text style={styles.buttonText}>{idx < cards.length - 1 ? 'Next' : 'Finish'}</Text>
           </TouchableOpacity>
@@ -214,3 +147,5 @@ const styles = StyleSheet.create({
   buttonDisabled: { backgroundColor: '#9CA3AF' },
   buttonText: { color: 'white', fontWeight: '600' }
 });
+
+export default FlashSet;
