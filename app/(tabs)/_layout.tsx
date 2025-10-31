@@ -4,10 +4,11 @@ import React from 'react'
 const _layout = () => {
   return (
     <Tabs>
+
         <Tabs.Screen
             name="index"
             options={{
-                title: 'Home',
+                title: 'ASL',
               headerShown: false,
             }}
         />
@@ -25,6 +26,7 @@ const _layout = () => {
               headerShown: false,
             }}
         />
+  
         
     </Tabs>
   )

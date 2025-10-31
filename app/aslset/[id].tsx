@@ -9,7 +9,7 @@ import { Flashcard, FlashSetId } from '../models/flashcards.types';
 import { VideoView } from 'expo-video';
 import { useFlashcardVideo } from '../hooks/useVideoPlayer';
 
-const FlashSet = () => {
+const ASLSet = () => {
   
 
   const { id } = useLocalSearchParams();
@@ -148,4 +148,4 @@ const styles = StyleSheet.create({
   buttonText: { color: 'white', fontWeight: '600' }
 });
 
-export default FlashSet;
+export default ASLSet;
